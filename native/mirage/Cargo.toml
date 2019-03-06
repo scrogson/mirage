@@ -1,0 +1,16 @@
+[package]
+name = "mirage"
+version = "0.1.0"
+authors = ["Sonny Scroggin <sonny@scrogg.in>"]
+edition = "2018"
+
+[lib]
+name = "mirage"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+image = "0.21"
+rustler = "0.20"
+rustler_codegen = "0.20"
+lazy_static = "1.2"
