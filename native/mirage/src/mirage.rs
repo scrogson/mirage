@@ -4,16 +4,15 @@ use rustler::{
     types::{atom::Atom, Binary, OwnedBinary},
     Encoder, Env, Term,
 };
-use rustler_codegen::NifStruct as Struct;
+use rustler_codegen::NifStruct;
 use std::error::Error;
 use std::io::Write as _;
 
 use crate::atoms::{error, gif, jpg, ok, png, unsupported_image_format};
 
-#[derive(Struct)]
+#[derive(NifStruct)]
 #[module = "Mirage"]
-struct Mirage<'a> {
-    bytes: Binary<'a>,
+struct Mirage {
     byte_size: usize,
     extension: Atom,
     height: u32,
@@ -32,39 +31,18 @@ pub fn from_bytes<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, rustl
 
     match image::load_from_memory(bytes.as_slice()) {
         Ok(image) => {
-            let mut output = Vec::new();
-            let mut binary = OwnedBinary::new(image.raw_pixels().len()).unwrap();
-            let format = match image::guess_format(&bytes.as_slice()) {
-                Ok(format) => format,
-                Err(_) => return Ok((error(), unsupported_image_format()).encode(env)),
-            };
+            if let Ok(format) = image::guess_format(&bytes.as_slice()) {
+                let mirage = Mirage {
+                    byte_size: bytes.len(),
+                    extension: extension(format),
+                    width: image.width(),
+                    height: image.height(),
+                    resource: ResourceArc::new(Image { image, format }),
+                };
 
-            match image.write_to(&mut output, format) {
-                Ok(_) => {
-                    match binary.as_mut_slice().write_all(&output) {
-                        Ok(()) => (),
-                        Err(err) => println!("{:?}", err.description()),
-                    };
-                    let extension = extension(format);
-                    let bytes = binary.release(env);
-                    let byte_size = bytes.len();
-                    let width = image.width();
-                    let height = image.height();
-                    let resource = ResourceArc::new(Image { image, format });
-
-                    let mirage = Mirage {
-                        bytes,
-                        byte_size,
-                        extension,
-                        height,
-                        width,
-                        resource,
-                    };
-
-                    Ok((ok(), mirage).encode(env))
-                }
-                Err(err) => return Ok((error(), err.description()).encode(env)),
+                return Ok((ok(), mirage).encode(env));
             }
+            return Err(rustler::Error::Atom("unsupported_image_format"));
         }
         Err(err) => Ok((error(), err.description()).encode(env)),
     }
@@ -92,7 +70,6 @@ pub fn resize<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, rustler::
             let byte_size = bytes.as_slice().len();
 
             let mirage = Mirage {
-                bytes,
                 byte_size,
                 extension,
                 height,
@@ -100,7 +77,7 @@ pub fn resize<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, rustler::
                 resource,
             };
 
-            Ok((ok(), mirage).encode(env))
+            Ok((ok(), bytes, mirage).encode(env))
         }
         Err(err) => return Ok((error(), err.description()).encode(env)),
     }
@@ -115,7 +92,7 @@ fn extension(format: ImageFormat) -> Atom {
     }
 }
 
-pub fn load<'a>(env: Env<'a>) -> bool {
+pub fn load(env: Env) -> bool {
     rustler::resource_struct_init!(Image, env);
     true
 }

@@ -1,8 +1,7 @@
 defmodule Mirage do
   use Rustler, otp_app: :mirage
 
-  defstruct bytes: nil,
-            byte_size: nil,
+  defstruct byte_size: nil,
             extension: nil,
             height: nil,
             width: nil,
