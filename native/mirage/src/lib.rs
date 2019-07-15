@@ -1,9 +1,9 @@
-use rustler::schedule::SchedulerFlags::*;
+use rustler::{Env, SchedulerFlags::*, Term};
 
 mod atoms;
 mod mirage;
 
-fn load(env: rustler::Env, _info: rustler::Term) -> bool {
+fn load(env: Env, _info: Term) -> bool {
     mirage::load(env);
     true
 }

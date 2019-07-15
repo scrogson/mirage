@@ -11,6 +11,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 image = "0.21"
-rustler = "0.20"
-rustler_codegen = "0.20"
 lazy_static = "1.2"
+
+[dependencies.rustler]
+git = "https://github.com/rusterlium/rustler"
+branch = "master"

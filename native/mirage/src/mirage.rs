@@ -1,10 +1,5 @@
 use image::{DynamicImage, FilterType, GenericImageView, ImageFormat};
-use rustler::resource::ResourceArc;
-use rustler::{
-    types::{atom::Atom, Binary, OwnedBinary},
-    Encoder, Env, Term,
-};
-use rustler_codegen::NifStruct;
+use rustler::{Atom, Binary, Encoder, Env, NifStruct, OwnedBinary, ResourceArc, Term};
 use std::error::Error;
 use std::io::Write as _;
 
