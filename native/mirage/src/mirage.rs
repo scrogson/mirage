@@ -87,7 +87,7 @@ fn extension(format: ImageFormat) -> Atom {
     }
 }
 
-pub fn load(env: Env) -> bool {
+pub fn load<'a>(env: Env, _info: Term<'a>) -> bool {
     rustler::resource_struct_init!(Image, env);
     true
 }

@@ -25,3 +25,5 @@ mirage-*.tar
 # Ignore shared object files and dlls
 *.so
 *.dll
+
+/native/mirage/target
