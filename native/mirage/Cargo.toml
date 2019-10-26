@@ -11,5 +11,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 image = "0.21"
-lazy_static = "1.2"
-rustler = "~0.21"
+rustler = "0.22.0-rc"

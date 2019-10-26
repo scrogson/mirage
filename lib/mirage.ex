@@ -1,12 +1,15 @@
 defmodule Mirage do
-  use Rustler, otp_app: :mirage
-
   defstruct byte_size: nil,
-            extension: nil,
+            format: nil,
             height: nil,
             width: nil,
             resource: nil
 
-  def from_bytes(_path), do: :erlang.nif_error(:nif_not_loaded)
-  def resize(_resource, _width, _height), do: :erlang.nif_error(:nif_not_loaded)
+  def from_bytes(bytes) do
+    Mirage.Native.from_bytes(bytes)
+  end
+
+  def resize(%Mirage{} = mirage, width, height) do
+    Mirage.Native.resize(mirage.resource, width, height)
+  end
 end

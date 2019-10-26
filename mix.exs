@@ -21,7 +21,7 @@ defmodule Mirage.MixProject do
 
   defp deps do
     [
-      {:rustler, "~> 0.21"}
+      {:rustler, "~> 0.22-rc"}
     ]
   end
 end
