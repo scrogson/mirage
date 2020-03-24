@@ -34,12 +34,12 @@ end
 ```ex
 {:ok, bytes} = File.read("/path/to/image.png")
 {:ok, mirage} = Mirage.from_bytes(bytes)
-{:ok, mirage} = Mirage.resize(mirage.resource, 400, 300)
+{:ok, new_bytes, mirage} = Mirage.resize(mirage.resource, 400, 300)
 
 mirage.width #=> 400
 mirage.height #=> 300
 
-File.write!("/path/to/resized-400x300.png", mirage.bytes)
+File.write!("/path/to/resized-400x300.png", new_bytes)
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)

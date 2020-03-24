@@ -1,13 +1,11 @@
-use rustler::{SchedulerFlags::*, Term};
-
 mod atoms;
 mod mirage;
 
-rustler::rustler_export_nifs! {
-    "Elixir.Mirage",
+rustler::init! {
+    "Elixir.Mirage.Native",
     [
-        ("from_bytes", 1, mirage::from_bytes, DirtyIo),
-        ("resize", 3, mirage::resize, DirtyCpu),
+        mirage::from_bytes,
+        mirage::resize
     ],
-    Some(mirage::load)
+    load = mirage::load
 }

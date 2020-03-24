@@ -1,53 +1,52 @@
 use image::{DynamicImage, FilterType, GenericImageView, ImageFormat};
-use rustler::{Atom, Binary, Encoder, Env, NifStruct, OwnedBinary, ResourceArc, Term};
-use std::error::Error;
+use rustler::{Atom, Binary, Env, Error, NifStruct, OwnedBinary, ResourceArc, Term};
 use std::io::Write as _;
 
-use crate::atoms::{error, gif, jpg, ok, png, unsupported_image_format};
+use crate::atoms::{gif, jpg, ok, png, unsupported_image_format};
 
 #[derive(NifStruct)]
 #[module = "Mirage"]
-struct Mirage {
+pub struct Mirage {
     byte_size: usize,
-    extension: Atom,
+    format: Atom,
     height: u32,
     width: u32,
     resource: ResourceArc<Image>,
 }
 
-struct Image {
+pub struct Image {
     image: DynamicImage,
     format: ImageFormat,
 }
 
-/// from_bytes(path: String) -> Result<Mirage>
-pub fn from_bytes<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, rustler::Error> {
-    let bytes: Binary = args[0].decode()?;
-
-    match image::load_from_memory(bytes.as_slice()) {
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn from_bytes(binary: Binary) -> Result<(Atom, Mirage), Error> {
+    match image::load_from_memory(binary.as_slice()) {
         Ok(image) => {
-            if let Ok(format) = image::guess_format(&bytes.as_slice()) {
+            if let Ok(format) = image::guess_format(&binary.as_slice()) {
                 let mirage = Mirage {
-                    byte_size: bytes.len(),
-                    extension: extension(format),
+                    byte_size: binary.len(),
+                    format: image_format(format),
                     width: image.width(),
                     height: image.height(),
                     resource: ResourceArc::new(Image { image, format }),
                 };
 
-                return Ok((ok(), mirage).encode(env));
+                return Ok((ok(), mirage));
             }
-            return Err(rustler::Error::Atom("unsupported_image_format"));
+            return Err(Error::Atom("unsupported_image_format"));
         }
-        Err(err) => Ok((error(), err.description()).encode(env)),
+        Err(_) => Err(Error::BadArg),
     }
 }
 
-/// resize(resource: ResourceArc<Image>, width: u32, height: u32) -> Result<Vec<u8>>
-pub fn resize<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, rustler::Error> {
-    let resource: ResourceArc<Image> = args[0].decode()?;
-    let width: u32 = args[1].decode()?;
-    let height: u32 = args[2].decode()?;
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn resize(
+    env: Env,
+    resource: ResourceArc<Image>,
+    width: u32,
+    height: u32,
+) -> Result<(Atom, Binary, Mirage), Error> {
     let resized = resource
         .image
         .resize_to_fill(width, height, FilterType::Triangle);
@@ -59,26 +58,26 @@ pub fn resize<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, rustler::
             binary
                 .as_mut_slice()
                 .write_all(&output)
-                .map_err(|_| rustler::Error::Atom("io_error"))?;
-            let extension = extension(resource.format);
+                .map_err(|_| Error::Atom("io_error"))?;
+            let format = image_format(resource.format);
             let bytes = binary.release(env);
             let byte_size = bytes.as_slice().len();
 
             let mirage = Mirage {
                 byte_size,
-                extension,
+                format,
                 height,
                 width,
                 resource,
             };
 
-            Ok((ok(), bytes, mirage).encode(env))
+            Ok((ok(), bytes, mirage))
         }
-        Err(err) => return Ok((error(), err.description()).encode(env)),
+        Err(_) => Err(Error::BadArg),
     }
 }
 
-fn extension(format: ImageFormat) -> Atom {
+fn image_format(format: ImageFormat) -> Atom {
     match format {
         ImageFormat::PNG => png(),
         ImageFormat::JPEG => jpg(),
@@ -87,7 +86,7 @@ fn extension(format: ImageFormat) -> Atom {
     }
 }
 
-pub fn load<'a>(env: Env, _info: Term<'a>) -> bool {
-    rustler::resource_struct_init!(Image, env);
+pub fn load(env: Env, _info: Term) -> bool {
+    rustler::resource!(Image, env);
     true
 }
