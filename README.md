@@ -34,7 +34,7 @@ end
 ```ex
 {:ok, bytes} = File.read("/path/to/image.png")
 {:ok, mirage} = Mirage.from_bytes(bytes)
-{:ok, new_bytes, mirage} = Mirage.resize(mirage.resource, 400, 300)
+{:ok, new_bytes, mirage} = Mirage.resize(mirage, 400, 300)
 
 mirage.width #=> 400
 mirage.height #=> 300
